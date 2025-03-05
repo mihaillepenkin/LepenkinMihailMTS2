@@ -23,7 +23,7 @@ public interface FilesController {
     @Parameter(in = ParameterIn.PATH, name = "newBucketName", description = "new bucket name", example = "java")
     @Parameter(in = ParameterIn.PATH, name = "fileName", description = "file name", example = "MTS_Programmers")
     @Parameter(in = ParameterIn.PATH, name = "oldBucketName", description = "old bucket name", example = "assembler")
-    public ResponseEntity<String> replaceFile(@PathVariable("newBucketName") String newBucketName, @PathVariable("fileName") String FileName, @PathVariable("oldBucketName") String oldBucketName) throws FileNotFoundException;
+    public ResponseEntity<String> replaceFile(@PathVariable("newBucketName") String newBucketName, @PathVariable("fileName") String FileName, @PathVariable("oldBucketName") String oldBucketName) throws FileNotFoundException, BucketNotFoundException;
     @Operation(summary = "delete file")
     @ApiResponse(responseCode = "200", description = "file is deleted")
     @Parameter(in = ParameterIn.PATH, name = "fileName", description = "file name", example = "Yandex")

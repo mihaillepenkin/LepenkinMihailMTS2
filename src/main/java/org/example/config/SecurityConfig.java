@@ -15,8 +15,7 @@ public class SecurityConfig {
     @Bean
     protected SecurityFilterChain configure(HttpSecurity http, JwtTokenFilter jwtTokenFilter)
             throws Exception {
-        http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
-                .authorizeHttpRequests(req -> req.anyRequest().permitAll());
+        http.authorizeHttpRequests(req -> req.anyRequest().permitAll());
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

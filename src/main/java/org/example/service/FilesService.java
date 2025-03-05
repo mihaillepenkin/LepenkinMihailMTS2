@@ -5,55 +5,56 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.exception.BucketNotFoundException;
 import org.example.exception.FileNotFoundException;
 import org.example.repository.FilesRepository;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class FilesService {
-    private final FilesRepository filesRepository;
+    private final FilesRepository filesRepository = new FilesRepository();
 
+    // At Least Once
+    @Retryable(value = FileNotFoundException.class, maxAttempts = 5, backoff = @Backoff(delay = 10000))
     public String renameFile(String oldFileName, String newFileName) throws FileNotFoundException {
-        if (oldFileName.equals("notFoundFileName")) {
-            throw new FileNotFoundException(String.format("file not found"));
-        } else {
-            log.info("Функция переименования файла");
-            return filesRepository.renameFile(oldFileName, newFileName);
+        //с вероятностью 50 процентов запрос будет обращен к несуществующему файлу
+        if (Math.random() < 0.2) {
+            oldFileName = oldFileName + ((int) (Math.random() * Math.random() * 158793107) + "");
         }
+        log.info("Функция переименования файла");
+        return filesRepository.renameFile(oldFileName, newFileName);
     }
 
+    // Exactly Once
+    private final Set<String> processedIds = ConcurrentHashMap.newKeySet();
+    @Cacheable(cacheNames = {"renameBucket"}, key = "{#newBucketName}")
     public String renameBucket(String oldBucketName, String newBucketName) throws BucketNotFoundException {
-        if (oldBucketName.equals("notFoundOldBucketName")) {
-            throw new BucketNotFoundException(String.format("bucket not found"));
-        } else {
-            log.info("Функция переименования бакета");
-            return filesRepository.renameBucket(oldBucketName, newBucketName);
+        if (!processedIds.add(oldBucketName)) {
+            return "Уже переименован";
         }
+        log.info("Функция переименования бакета");
+        return filesRepository.renameBucket(oldBucketName, newBucketName);
     }
 
-    public String replaceFile(String FileName, String oldBucketName, String newBucketName) throws FileNotFoundException {
-        if (FileName.equals("notFoundFileName")) {
-            throw new FileNotFoundException(String.format("file not found"));
-        } else {
+    @Async
+    public void replaceFile(String oldBucketName, String FileName, String newBucketName) throws FileNotFoundException, BucketNotFoundException {
             log.info("Функция перемещения");
-            return filesRepository.replaceFile(FileName, oldBucketName, newBucketName);
-        }
+            filesRepository.replaceFile(oldBucketName, FileName, newBucketName);
     }
-
-    public String deliteFile(String FileName) throws FileNotFoundException {
-        if (FileName.equals("notFoundFileName")) {
-            throw new FileNotFoundException(String.format("file not found"));
-        } else {
+    @Cacheable(cacheNames = {"deliteFile"}, key = "{#FileName}")
+    public String deleteFile(String FileName) throws FileNotFoundException {
             log.info("Функция удаления файла");
-            return filesRepository.deliteFile(FileName);
-        }
+            return filesRepository.deleteFile(FileName);
     }
-    public String deliteBucket(String BucketName) throws BucketNotFoundException {
-        if (BucketName.equals("notFoundBucketName")) {
-            throw new BucketNotFoundException(String.format("bucket not found"));
-        } else {
+    @Cacheable(cacheNames = {"deliteBucket"}, key = "{#BucketName}")
+    public String deleteBucket(String BucketName) throws BucketNotFoundException {
             log.info("Функция удаления бакета");
-            return filesRepository.deliteBucket(BucketName);
-        }
+            return filesRepository.deleteBucket(BucketName);
     }
 }

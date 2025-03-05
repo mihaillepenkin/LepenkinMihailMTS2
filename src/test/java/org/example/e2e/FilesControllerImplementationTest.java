@@ -1,48 +1,74 @@
 package org.example.e2e;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-import org.junit.jupiter.api.Assertions;
-import org.springframework.test.context.junit4.SpringRunner;
-
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Slf4j
 class SpringProjectApplicationTest {
 
-    @LocalServerPort
-    private int port;
+    @LocalServerPort private int port;
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    @Autowired private TestRestTemplate restTemplate;
+
+    static PostgreSQLContainer<?> postgresContainer =
+            new PostgreSQLContainer<>("postgres:13")
+                    .withInitScript("bdTestHomework.sql")
+                    .withDatabaseName("dbTest")
+                    .withUsername("admin")
+                    .withPassword("secret");
+
+    static {
+        postgresContainer.start();
+    }
+
+    @DynamicPropertySource
+    static void registerProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @Test
-    void endToEnd() {
-        ResponseEntity<String> response1 =
-                restTemplate.getForEntity("http://localhost:" + port + "/files/info/oldFileName/newFileName", String.class);
-        Assertions.assertEquals(HttpStatus.OK, response1.getStatusCode());
-        Assertions.assertTrue(response1.getBody().contains("переименовываю файл oldFileName в newFileName"));
-        ResponseEntity<String> response2 =
-                restTemplate.getForEntity("http://localhost:" + port + "/files/info/oldBucketName/fileName/newBucketName", String.class);
-        Assertions.assertEquals(HttpStatus.OK, response2.getStatusCode());
-        Assertions.assertTrue(response2.getBody().contains("перемещаю файл fileName из oldBucketName в newBucketName"));
-        ResponseEntity<String> response3 =
-                restTemplate.getForEntity("http://localhost:" + port + "/files/info/fileName", String.class);
-        Assertions.assertEquals(HttpStatus.OK, response3.getStatusCode());
-        Assertions.assertTrue(response3.getBody().contains("удаляю файл fileName"));
-        ResponseEntity<String> response4 =
-                restTemplate.getForEntity("http://localhost:" + port + "/buckets/info/bucketName", String.class);
-        Assertions.assertEquals(HttpStatus.OK, response4.getStatusCode());
-        Assertions.assertTrue(response4.getBody().contains("удаляю бакет bucketName"));
-        ResponseEntity<String> response5 =
-                restTemplate.getForEntity("http://localhost:" + port + "/buckets/info/oldBucketName/newBucketName", String.class);
-        Assertions.assertEquals(HttpStatus.OK, response5.getStatusCode());
-        Assertions.assertTrue(response5.getBody().contains("переименовываю бакет oldBucketName в newBucketName"));
+    void EndToEndTest() {
+        log.info("Db host: {}", postgresContainer.getHost());
+        log.info("Db port: {}", postgresContainer.getFirstMappedPort());
+        log.info("PostgreSQL is running at: {}", postgresContainer.getJdbcUrl());
+
+        String renameFileRequest =
+                restTemplate.patchForObject("http://localhost:" + port + "/files/info/Russia/Turkey","",String.class);
+
+        assertEquals("переименовываю файл Russia в Turkey", renameFileRequest);
+
+        ResponseEntity<String> deleteFileRequest =
+                restTemplate.exchange("http://localhost:" + port + "/files/info/USA", HttpMethod.DELETE, HttpEntity.EMPTY, String.class);
+
+
+        String replaceFileRequest =
+                restTemplate.patchForObject("http://localhost:" + port + "/files/info/Country/Turkey/Book","",String.class);
+
+        assertEquals("перемещаю файл Turkey из Country в Book", replaceFileRequest);
+
+        ResponseEntity<String> deleteBucketRequest =
+                restTemplate.exchange("http://localhost:" + port + "/buckets/info/Country", HttpMethod.DELETE, HttpEntity.EMPTY, String.class);
+
+        String renameBucketRequest =
+                restTemplate.patchForObject("http://localhost:" + port + "/buckets/info/Book/Paper","",String.class);
+
+        assertEquals("переименовываю бакет Book в Paper", renameBucketRequest);
+
+
     }
 }
