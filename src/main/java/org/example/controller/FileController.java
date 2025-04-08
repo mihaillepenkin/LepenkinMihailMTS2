@@ -12,12 +12,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @Tag(name = "FilesUtils API", description = "Files utils")
 
-public interface FilesController {
+public interface FileController {
     @Operation(summary = "rename file")
     @ApiResponse(responseCode = "200", description = "file is renamed")
     @Parameter(in = ParameterIn.PATH, name = "oldFileName", description = "old file name", example = "2007")
     @Parameter(in = ParameterIn.PATH, name = "newFileName", description = "new file name", example = "2025")
-    public ResponseEntity<String> renameFile(@PathVariable("newFileName") String newFileName, @PathVariable("oldFileName") String oldFileName) throws FileNotFoundException;
+    public ResponseEntity<String> renameFile(@PathVariable("newFileName") String newFileName, @PathVariable("oldFileName") String oldFileName) throws FileNotFoundException, BucketNotFoundException;
     @Operation(summary = "replace file")
     @ApiResponse(responseCode = "200", description = "file is replaced")
     @Parameter(in = ParameterIn.PATH, name = "newBucketName", description = "new bucket name", example = "java")
@@ -28,13 +28,9 @@ public interface FilesController {
     @ApiResponse(responseCode = "200", description = "file is deleted")
     @Parameter(in = ParameterIn.PATH, name = "fileName", description = "file name", example = "Yandex")
     public ResponseEntity<String> deleteFile(@PathVariable("fileName") String FileName) throws BucketNotFoundException, FileNotFoundException;
-    @Operation(summary = "rename bucket")
-    @ApiResponse(responseCode = "200", description = "bucket is renamed")
-    @Parameter(in = ParameterIn.PATH, name = "oldBucketName", description = "old bucket name", example = "2007")
-    @Parameter(in = ParameterIn.PATH, name = "newBucketName", description = "new bucket name", example = "2025")
-    public ResponseEntity<String> renameBucket(@PathVariable("newBucketName") String newFileName, @PathVariable("oldBucketName") String oldFileName) throws FileNotFoundException, BucketNotFoundException;
-    @Operation(summary = "delete bucket")
-    @ApiResponse(responseCode = "200", description = "bucket is deleted")
-    @Parameter(in = ParameterIn.PATH, name = "bucketName", description = "bucket name", example = "Yandex")
-    public ResponseEntity<String> deleteBucket(@PathVariable("bucketName") String FileName) throws BucketNotFoundException;
+    @Operation(summary = "create file")
+    @ApiResponse(responseCode = "200", description = "file is created")
+    @Parameter(in = ParameterIn.PATH, name = "fileName", description = "file name", example = "Yandex")
+    @Parameter(in = ParameterIn.PATH, name = "bucketName", description = "bucket name", example = "Company")
+    public ResponseEntity<String> createFile(@PathVariable("fileName") String FileName, @PathVariable("bucketName") String BucketName) throws BucketNotFoundException, FileNotFoundException;
 }
