@@ -23,8 +23,6 @@ public class Bucket {
     @OneToMany(mappedBy = "bucket")
     private List<File> file;
 
-    protected Bucket () {}
-
     public Bucket(String bucketName, List<File> file) {
         this.bucketName = bucketName;
         this.file = file;

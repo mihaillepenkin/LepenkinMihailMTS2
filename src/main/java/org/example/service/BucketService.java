@@ -28,8 +28,6 @@ public class BucketService {
 
     private final BucketRepository bucketRepository;
     private final FileRepository fileRepository;
-
-    // Exactly Once
     private final Set<String> processedIds = ConcurrentHashMap.newKeySet();
     @Cacheable(cacheNames = {"renameBucket"}, key = "{#newBucketName}")
     public void renameBucket(String oldBucketName, String newBucketName) throws BucketNotFoundException {

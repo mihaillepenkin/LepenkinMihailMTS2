@@ -25,10 +25,8 @@ public class FileService {
     private final FileRepository fileRepository;
     private final BucketRepository bucketRepository;
 
-    // At Least Once
     @Retryable(value = FileNotFoundException.class, maxAttempts = 5, backoff = @Backoff(delay = 10000))
     public void renameFile(String oldFileName, String newFileName) throws FileNotFoundException, BucketNotFoundException {
-        //с вероятностью 50 процентов запрос будет обращен к несуществующему файлу
         if (Math.random() < 0.2) {
             oldFileName = oldFileName + ((int) (Math.random() * Math.random() * 158793107) + "");
         }
