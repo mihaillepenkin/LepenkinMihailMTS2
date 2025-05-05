@@ -1,0 +1,6 @@
+CREATE TABLE file
+(
+    file_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
+    file_name VARCHAR(10) NOT NULL,
+    bucket_id BIGINT REFERENCES bucket (bucket_id)
+);

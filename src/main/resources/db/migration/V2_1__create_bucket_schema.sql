@@ -1,0 +1,4 @@
+CREATE TABLE bucket (
+    bucket_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    bucket_name VARCHAR(255) NOT NULL,
+);
